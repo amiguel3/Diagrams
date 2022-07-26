@@ -1,0 +1,99 @@
+title RCE RAN Config Environment --> RAN Charing
+
+actor User
+
+participantgroup #lightyellow <color:#Black>++PORTAL</color>
+participant Portal
+end
+
+group #2f2e7b AUTHENTICATION #white
+User->Portal: Open Portal
+Portal->Portal:Autenticate()
+end
+
+participantgroup #lightblue <color:#Black>++API GW FE</color>
+participant API GW FE
+end
+
+participantgroup #lightgreen <color:#Black>++CORE</color>
+participant Designer
+participant Engine
+participant Monitor
+participant Deployer
+participant Broker
+end
+
+participantgroup #orange <color:#Black>++DATABASE</color>
+participant Configuration
+participant Integration
+end
+
+group #fef9e7 INVOKER #black
+User->Portal: Choose OpCO
+Portal->Designer: getScenarios()
+Designer->Configuration: getScenarios()
+User->Portal: Run **RAN Sharing**
+Portal->Designer: getScenariosData()
+Designer-->Portal: API Response
+end 
+
+
+
+
+
+
+
+
+
+User->Portal: Run Scenario job
+Portal->Designer: Get Scenario data
+Designer-->Portal: API Response
+Portal->BaselineManager: Get Baselines data API
+BaselineManager->BaselineManager: Get database baseline data
+BaselineManager-->Portal: API Response
+Portal->Portal: Choose baselines
+Portal->PreProcessor: Call Job API
+PreProcessor->RabbitMQ: Send Job to Queue
+PreProcessor->Portal: Returns created Job Id
+Engine->RabbitMQ: Job pulled from Queue
+note right of Engine: Engine executes steps logic
+note right of Engine: Steps to be executed is configured by scenario
+Engine->Engine: GET_SCENARIO_INFO Step
+Engine->Engine: GET_INPUTS Step
+Engine->Engine: NEW_DATA_EXTRACTION Step
+Engine->Engine: NEW_FILL_INTERNAL_VARIABLES Step
+note right of Engine: Creates additional "input" data
+Engine->Engine: NEW_VALIDATE_INTERNAL_VARIABLES Step
+note right of Engine: Validates input data
+Engine->Engine: NEW_GET_NETWORK_DATA Step
+note right of Engine: Gets data from the Network
+Engine->Deployer: Get Network data
+Deployer->Resolve: Get Network data
+Resolve->NetworkElements: Run scripts
+NetworkElements->Resolve: Scripts result
+Resolve->Deployer: Returns result
+Deployer->Engine: Returns result
+Engine->Engine: NEW_BUILD_TREE Step
+note right of Engine: Creates network image in Tree format
+Engine->Engine: NEW_UPDATE_TREE_WITH_CONFIGURATION Step
+note right of Engine: Changes Tree data based on Input data
+note right of Engine: When creating new objects in Tree
+note right of Engine: If we don't have input value we'll use Vendor Default
+Engine->Engine: NEW_TRANSFORMATION Step
+note right of Engine: Run rules which executes mandatory changes
+note right of Engine: when some objects are altered in previous steps
+Engine->Engine: NEW_SCENARIO_TRANSFORMATION Step
+note right of Engine: Run rules which executes mandatory changes
+note right of Engine: when some objects are altered in previous steps
+note right of Engine: specific for current scenario
+Engine->Engine: NEW_VALIDATION Step
+note right of Engine: Run Vendor validation rules
+Engine->Engine: NEW_GET_TEMPLATES Step
+note right of Engine: Get output templates
+Engine->Engine: NEW_POPULATE_TEMPLATES Step
+note right of Engine: Create scenario outputs
+Engine->Engine: NEW_OUTPUT_VALIDATION Step
+note right of Engine: Validate output files
+Engine->Engine: NEW_WRITE_OUTPUT_FILES Step
+note right of Engine: Create final zip file
+User->Portal: Check Job result
